@@ -4,6 +4,7 @@ const MiniCssExtractPlugin = require("mini-css-extract-plugin");
 const ImageMinimizerPlugin = require("image-minimizer-webpack-plugin");
 const ImageminWebpWebpackPlugin = require("imagemin-webp-webpack-plugin");
 const CopyPlugin = require("copy-webpack-plugin");
+const autoprefixer = require('autoprefixer')
 const fs = require("fs");
 const TerserPlugin = require("terser-webpack-plugin");
 const path = require("path");
@@ -27,9 +28,6 @@ const sourcePath = path.resolve(__dirname, "./", "src/assets/");
 const destPath = path.resolve(__dirname, "./", "dist/assets/");
 
 
-//рабочий
-// const INCLUDE_PATTERN =
-//   /<include\s+src=["'](\.\/)?([^"']+)["']\s+data-props='([^']+)'\s*><\/include>/g;
 
 const INCLUDE_PATTERN =
   /<include\s+src=["'](\.\/)?([^"']+)["'](?:\s+data-props='([^']+)')?\s*><\/include>/g;
@@ -114,11 +112,11 @@ function processHtmlLoader(content, loaderContext) {
       return `${p1}="${p2}.webp"`;
     }
   );
-  if(devMode){
+  if (!devMode) {
     newContent = newContent.replace(
       /<img/g,
       '<img loading=\'lazy\''
-    ); 
+    );
   }
   return newContent;
 }
@@ -169,16 +167,11 @@ module.exports = {
         vendor: {
           test: /[\\/]node_modules[\\/]/,
           name(module) {
-            // получает имя, то есть node_modules/packageName/not/this/part.js
-            // или node_modules/packageName
             const packageName = module.context.match(/[\\/]node_modules[\\/](.*?)([\\/]|$)/);
-            if (packageName.length){
-              return `${packageName[1].replace('@', '')}`;
+            if (packageName && packageName.length) {
+              return `${packageName[1].replace('@', '')}`
             }
-              // имена npm-пакетов можно, не опасаясь проблем, использовать
-              // в URL, но некоторые серверы не любят символы наподобие @
-           
-          },
+          }
         },
       },
     },
@@ -191,7 +184,7 @@ module.exports = {
     ...pages,
     new MiniCssExtractPlugin({
       filename: "css/[name].css",
-      chunkFilename: "[name].[contenthash:8].css",
+
     }),
     new ImageMinimizerPlugin({
       minimizer: {
@@ -229,7 +222,7 @@ module.exports = {
         },
       ],
     })
-   
+
   ],
 
 
@@ -263,15 +256,27 @@ module.exports = {
             loader: "css-loader",
             options: {
               esModule: false,
-              modules: {
-                auto: true,
-                namedExport: true,
-                localIdentName: "foo__[name]__[local]",
-              },
               url: false,
+
             },
           },
           "group-css-media-queries-loader",
+          {
+            loader: "postcss-loader",
+            options: {
+              postcssOptions: {
+                plugins: [
+                  autoprefixer({
+                    overrideBrowserslist: [
+                      "last 2 versions",
+                      "> 1%",
+                      "IE 11",
+                    ],
+                  }),
+                ],
+              },
+            },
+          },
           "sass-loader",
         ]
       },
@@ -296,5 +301,5 @@ module.exports = {
       }
     ],
   },
-  
+
 };
